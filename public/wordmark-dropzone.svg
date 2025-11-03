@@ -1,0 +1,12 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="200" y2="60">
+      <stop offset="0" stop-color="#00FF88" />
+      <stop offset="1" stop-color="#9A4DFF" />
+    </linearGradient>
+  </defs>
+  <circle cx="30" cy="30" r="22" stroke="url(#grad)" stroke-width="3" fill="none" />
+  <circle cx="30" cy="30" r="10" stroke="url(#grad)" stroke-width="3" fill="none" />
+  <path d="M30 10 L38 20 H22 Z" fill="url(#grad)" opacity="0.9" />
+  <text x="65" y="40" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="url(#grad)">Dropzone</text>
+</svg>

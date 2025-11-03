@@ -1,0 +1,62 @@
+import "./globals.css";
+import type { Metadata } from "next";
+import Script from "next/script";
+import { Nav } from "@/components/ui/nav";
+import { Footer } from "@/components/ui/footer";
+import { Toaster } from "sonner";
+import ConsentBanner from "@/components/consent/ConsentBanner";
+
+const title = "Dropzone — Fortnite Stats, Trends & Coaching";
+const description = "Track your Fortnite performance, auto-detect highlights, and get personalized coaching plans from your real matches.";
+const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "ca-pub-XXXXXXXXXXXXXXXX";
+
+export const metadata: Metadata = {
+  title, description,
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000"),
+  openGraph: { title: "Dropzone — Fortnite Stats, Trends & Coaching", description: "Stats that coach you back.", url: "/", siteName: "Dropzone", images: [{ url: "/wordmark-dropzone.svg", width: 1200, height: 630, alt: "Dropzone" }], type: "website" },
+  twitter: { card: "summary_large_image", title: "Dropzone", description: "Land smart. Win more.", images: ["/wordmark-dropzone.svg"] },
+  icons: { icon: "/icon.svg" },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        {/* AdSense script */}
+        <Script
+          id="adsense-loader"
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        {/* gtag dataLayer + Consent Mode v2 baseline (denied by default) */}
+        <Script id="consent-default" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied'
+            });
+          `}
+        </Script>
+      </head>
+      <body className="bg-black text-white">
+        <Nav />
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="my-3 rounded-xl border border-white/10 bg-[#0F0F12] px-3 py-2 text-xs text-gray-300 flex items-center justify-between">
+            <span>🎉 Public Beta — stats & guides are live. Ads help keep this free.</span>
+            <a className="underline" href="/contact">Send feedback</a>
+          </div>
+          {children}
+        </div>
+        <Footer />
+        <Toaster richColors position="top-right" />
+        <ConsentBanner />
+      </body>
+    </html>
+  );
+}

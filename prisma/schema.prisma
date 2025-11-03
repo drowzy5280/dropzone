@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(cuid())
+  email       String?       @unique
+  name        String?
+  image       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  accounts    Account[]
+  sessions    Session[]
+  profile     Profile?
+  memberships Membership[]
+  links       ExternalLink[]
+}
+
+model Profile {
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id])
+  gamertag   String?
+  bio        String?
+  xp         Int     @default(0)
+  level      Int     @default(1)
+  streakDays Int     @default(0)
+  settings   String?
+}
+
+model ExternalLink {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields:[userId], references:[id])
+  provider  String
+  accountId String
+  username  String
+  createdAt DateTime @default(now())
+  @@unique([userId, provider])
+}
+
+model PlayerSnapshot {
+  id           String   @id @default(cuid())
+  userId       String?
+  epicId       String
+  username     String
+  mode         String
+  platform     String?
+  matches      Int
+  wins         Int
+  kills        Int
+  kd           Float?
+  winRate      Float?
+  top10Rate    Float?
+  avgPlacement Float?
+  period       String   @default("lifetime")
+  raw          String
+  createdAt    DateTime @default(now())
+}
+
+
+model MatchSnapshot {
+  id           String   @id @default(cuid())
+  epicId       String
+  username     String
+  endedAt      DateTime
+  kills        Int
+  win          Boolean
+
+  // NEW:
+  placement           Int?     // exact placement if known (1..100)
+  placementBucket     String?  // one of: "1", "2-10", "11-25", "26-50", "51-100"
+  placementSource     String?  // "provider" | "heuristic" | null
+
+  matchesAfter Int
+  winsAfter    Int
+  raw          String
+  createdAt    DateTime @default(now())
+
+  @@index([epicId, createdAt])
+}
+model CoachingPlan {
+  id        String   @id @default(cuid())
+  epicId    String
+  username  String
+  tier      String   @default("free")
+  summary   String
+  modules   String
+  createdAt DateTime @default(now())
+}
+
+model Membership {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields:[userId], references:[id])
+  tier         String   @default("free")
+  stripeSubId  String?
+  active       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  epicId    String
+  username  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, epicId])
+  @@index([userId])
+}
+
+model MatchNote {
+  id         String   @id @default(cuid())
+  userId     String
+  matchId    String
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, matchId])
+}

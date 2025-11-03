@@ -1,0 +1,199 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import LineTrend from "@/components/charts/LineTrend";
+import PlacementHistogram from "@/components/charts/PlacementHistogram";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+type Stats = {
+  epicId: string;
+  username: string;
+  matches: number;
+  wins: number;
+  kills: number;
+  kd: number;
+  winRate: number;
+  top10Rate?: number;
+};
+
+type Summary = {
+  trends?: {
+    kdDelta10?: number;
+    winRateDelta10?: number;
+    killsAvgDelta10?: number;
+  };
+};
+
+export default function PlayerPage({ params }: { params: { username: string } }) {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevRecentCount = useRef<number>(0);
+
+  async function load() {
+    const res = await fetch(`/api/player?username=${encodeURIComponent(params.username)}`, { cache: "no-store" });
+    const data = await res.json();
+    if (!data.error) {
+      setStats(data);
+      setLastFetched(new Date());
+      const r = await fetch(`/api/recent?epicId=${encodeURIComponent(data.epicId)}&limit=10`, { cache: "no-store" });
+      const rr = await r.json();
+      const rows = rr.matches ?? [];
+      if (prevRecentCount.current && rows.length > prevRecentCount.current) {
+        const diff = rows.length - prevRecentCount.current;
+        toast.success(diff === 1 ? "New match detected!" : `${diff} new matches detected!`);
+      }
+      prevRecentCount.current = rows.length;
+      setRecent(rows);
+
+      // NEW: Fetch summary with trends
+      const s = await fetch(`/api/analytics/summary?epicId=${encodeURIComponent(data.epicId)}&limit=50`, { cache: "no-store" });
+      const summaryData = await s.json();
+      setSummary(summaryData);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    function startInterval() {
+      if (intervalRef.current) return;
+      intervalRef.current = setInterval(() => {
+        if (document.visibilityState === "visible") load();
+      }, 90_000);
+    }
+    startInterval();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [params.username]);
+
+  if (!stats) return <div className="p-6 text-gray-400">Loading…</div>;
+
+  const trend = Array.from({ length: 20 }).map((_, i) => ({ i, kd: Math.max(0, stats.kd + (Math.random() - 0.5) * 0.3) }));
+  const hist = [
+    { bucket: "1–10", count: Math.round((stats.top10Rate ?? 20) / 2) },
+    { bucket: "11–25", count: 8 },
+    { bucket: "26–50", count: 5 },
+    { bucket: "51–100", count: 7 },
+  ];
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{stats.username}</h1>
+        <div className="text-xs text-gray-400">Last updated: {lastFetched ? lastFetched.toLocaleTimeString() : "—"}</div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <Stat label="Matches" v={stats.matches} />
+        <Stat label="Wins" v={stats.wins} />
+        <Stat label="KD" v={stats.kd?.toFixed(2)} />
+        <Stat label="Win Rate" v={`${stats.winRate?.toFixed(1)}%`} />
+      </div>
+
+      {summary && (
+        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+          <Trend label="KD" value={summary.trends?.kdDelta10} unit="" />
+          <Trend label="Win Rate" value={summary.trends?.winRateDelta10} unit="%" />
+          <Trend label="Kills/Match" value={summary.trends?.killsAvgDelta10} unit="" />
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-4 mt-6">
+        <LineTrend data={trend} dataKey="kd" label="KD Trend" />
+        <PlacementHistogram data={hist} />
+      </div>
+
+      <div className="mt-8">
+        <SectionHeader title="Recent Matches" subtitle="Auto-updates every ~90s while this page is open." />
+        <RecentTable rows={recent} />
+      </div>
+
+      <div className="mt-6">
+        <GeneratePlan epicId={stats.epicId} username={stats.username} />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, v }: { label: string; v: any }) {
+  return (
+    <div className="bg-neutral-900 p-4 rounded-2xl border border-[#202029]">
+      <div className="text-sm text-gray-400">{label}</div>
+      <div className="text-xl font-bold">{v}</div>
+    </div>
+  );
+}
+
+function Trend({ label, value, unit }: { label: string; value?: number; unit?: string }) {
+  if (value === undefined || value === null || isNaN(value)) {
+    return <div className="text-gray-500">{label}: —</div>;
+  }
+  const up = value > 0;
+  const color = up ? "text-emerald-400" : value < 0 ? "text-rose-400" : "text-gray-300";
+  const sign = value > 0 ? "+" : "";
+  return (
+    <div className={`border border-white/5 rounded-xl px-3 py-2 ${color}`}>
+      {label}: {sign}{value}{unit}
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-3">
+      <div className="flex items-end justify-between">
+        <h2 className="text-xl font-semibold">{title}</h2>
+        {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-[#9A4DFF]/30 to-transparent mt-2" />
+    </div>
+  );
+}
+
+function RecentTable({ rows }: { rows: any[] }) {
+  if (!rows?.length) {
+    return (
+      <div className="rounded-2xl border border-[#202029] bg-[#0F0F12] p-6 text-center text-gray-400">
+        No recent matches yet. Play a game and keep this page open; updates typically appear within a couple minutes.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-[#202029] bg-[#0F0F12] p-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="text-gray-400">
+          <tr>
+            <th className="text-left p-2">Ended</th>
+            <th className="text-right p-2">Kills</th>
+            <th className="text-right p-2">Win</th>
+            <th className="text-right p-2">Placement</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((m) => (
+            <tr key={m.id} className="border-t border-white/5">
+              <td className="p-2">{new Date(m.endedAt).toLocaleTimeString()}</td>
+              <td className="p-2 text-right">{m.kills}</td>
+              <td className="p-2 text-right">{m.win ? "Yes" : "No"}</td>
+              <td className="p-2 text-right">
+                {m.placement ?? (m.placementBucket ?? "—")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function GeneratePlan({ epicId, username }: { epicId: string; username: string }) {
+  async function onClick() {
+    const res = await fetch("/api/coach/plan", { method: "POST", body: JSON.stringify({ epicId, username }) });
+    const { planId } = await res.json();
+    if (planId) window.location.href = `/plan/${planId}`;
+  }
+  return <Button onClick={onClick}>Generate Coaching Plan</Button>;
+}
