@@ -61,6 +61,7 @@ Copy the printed `whsec_...` into `.env` as `STRIPE_WEBHOOK_SECRET=whsec_...`
 
 - `GET /api/player?username=NAME` — resolve Epic ID + fetch stats + store snapshot
 - `POST /api/coach/plan` `{ epicId, username? }` — returns `{ planId }`
+- `POST /api/subscribe` `{ email }` — subscribe to email updates
 - `/plan/[id]` — coaching plan
 - `/pro` — upgrade page
 
@@ -105,6 +106,7 @@ Ready for Vercel deployment:
 - Match notes per match
 - Shareable match card (OG image at /og/match?matchId=...)
 - Clip reminder + YouTube title helper on big games
+- Email subscription for updates (stored in database)
 
 ### Per-Match Placement & Trend Chips
 - `MatchSnapshot` now supports `placement` (exact), `placementBucket`, and `placementSource`.

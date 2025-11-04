@@ -93,14 +93,6 @@ export default function PlayerPage({ params }: { params: { username: string } })
         <Stat label="Win Rate" v={`${stats.winRate?.toFixed(1)}%`} />
       </div>
 
-      {summary && (
-        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-          <Trend label="KD" value={summary.trends?.kdDelta10} unit="" />
-          <Trend label="Win Rate" value={summary.trends?.winRateDelta10} unit="%" />
-          <Trend label="Kills/Match" value={summary.trends?.killsAvgDelta10} unit="" />
-        </div>
-      )}
-
       <div className="grid md:grid-cols-2 gap-4 mt-6">
         <LineTrend data={trend} dataKey="kd" label="KD Trend" />
         <PlacementHistogram data={hist} />

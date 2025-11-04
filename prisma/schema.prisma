@@ -157,3 +157,11 @@ model MatchNote {
 
   @@index([userId, matchId])
 }
+
+model EmailSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
