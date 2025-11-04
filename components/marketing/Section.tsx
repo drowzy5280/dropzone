@@ -7,8 +7,8 @@ export function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="text-2xl md:text-3xl font-semibold">{children}</h2>;
 }
 
-export function Sub({ children }: { children: React.ReactNode }) {
-  return <p className="text-gray-400">{children}</p>;
+export function Sub({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-gray-400 ${className}`}>{children}</p>;
 }
 
 // ⬇️ allow className here
