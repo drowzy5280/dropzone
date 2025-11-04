@@ -7,9 +7,9 @@ export const runtime = "edge";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const matchId = searchParams.get("matchId");
-  if (\!matchId) return new Response("matchId required", { status: 400 });
+  if (!matchId) return new Response("matchId required", { status: 400 });
   const m = await prisma.matchSnapshot.findUnique({ where: { id: matchId } });
-  if (\!m) return new Response("Not found", { status: 404 });
+  if (!m) return new Response("Not found", { status: 404 });
 
   return new ImageResponse(
     (
