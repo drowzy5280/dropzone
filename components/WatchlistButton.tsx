@@ -6,7 +6,7 @@ import { toast } from "sonner";
 export default function WatchlistButton({ epicId, username }: { epicId: string; username: string }) {
   const [saved, setSaved] = useState(false);
   async function toggle() {
-    if (\!saved) {
+    if (!saved) {
       const r = await fetch("/api/watchlist", { method: "POST", body: JSON.stringify({ epicId, username }) });
       const j = await r.json();
       if (j.item) { setSaved(true); toast.success("Added to Watchlist"); }
