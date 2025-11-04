@@ -15,7 +15,7 @@ export default function MatchNotes({ matchId }: { matchId: string }) {
   }
 
   async function add() {
-    if (\!val.trim()) return;
+    if (!val.trim()) return;
     const r = await fetch(`/api/match/note`, { method: "POST", body: JSON.stringify({ matchId, content: val }) });
     const j = await r.json();
     if (j.note) { setVal(""); toast.success("Saved note"); load(); }
